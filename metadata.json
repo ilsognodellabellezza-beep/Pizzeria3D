@@ -1,0 +1,6 @@
+{
+  "name": "Nati x la Pizza — Catania",
+  "description": "Pizzeria artigianale a Catania (Via Sabato Martelli Castaldi 92/94): ordina a domicilio o asporto con configuratore 3D, account clienti e area gestionale proprietario.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
