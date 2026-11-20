@@ -25,6 +25,23 @@ export function OrderTracker({ initial, justPlaced }: { initial: PublicOrder; ju
   const [order, setOrder] = useState(initial);
   const { clear } = useCart();
   const { settings } = useSiteInfo();
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+
+  // riprende il pagamento online di un ordine ancora in attesa
+  const payNow = async () => {
+    setPaying(true);
+    setPayError(null);
+    try {
+      const res = await fetch(`/api/orders/${initial.id}/pay`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.url) window.location.href = data.url;
+      else setPayError(data.error ?? "Pagamento non disponibile");
+    } catch {
+      setPayError("Connessione non riuscita. Riprova.");
+    }
+    setPaying(false);
+  };
 
   // svuota il carrello dopo un ordine andato a buon fine
   useEffect(() => {
@@ -72,6 +89,17 @@ export function OrderTracker({ initial, justPlaced }: { initial: PublicOrder; ju
             </span>
           )}
         </div>
+
+        {order.status === "in_attesa_pagamento" && (
+          <div className="mt-5 rounded-2xl bg-oro/15 p-4">
+            <p className="font-semibold">Il pagamento non è ancora stato completato.</p>
+            <p className="mt-1 text-sm text-pietra">L&apos;ordine parte in cucina solo dopo il pagamento con carta.</p>
+            <button type="button" onClick={payNow} disabled={paying} className="mt-3 inline-flex h-12 items-center rounded-full bg-brace px-6 font-semibold text-white hover:bg-brace-dark disabled:opacity-60">
+              {paying ? "Un attimo…" : "Completa il pagamento"}
+            </button>
+            {payError && <p className="mt-2 text-sm text-brace" role="alert">{payError}</p>}
+          </div>
+        )}
 
         {failed ? (
           <div className="mt-5 flex gap-3 rounded-2xl bg-brace/10 p-4 text-brace">

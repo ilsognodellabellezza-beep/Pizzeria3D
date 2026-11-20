@@ -25,7 +25,7 @@ export default async function PrintPage({ params }: PageProps<"/admin/stampa/[id
         <PrintButton />
       </div>
       <div className="mx-auto w-[72mm] p-[3mm] font-mono text-[12px] leading-snug text-black">
-        <p className="text-center text-[14px] font-bold">NATI X LA PIZZA</p>
+        <p className="text-center text-[14px] font-bold">EPIC PIZZA</p>
         <p className="text-center">{o.type === "delivery" ? "*** CONSEGNA ***" : "*** ASPORTO ***"}</p>
         <p className="mt-1 text-center text-[22px] font-bold">N° {o.number}</p>
         <p className="text-center text-[16px] font-bold">ORE {formatTime(time)}</p>

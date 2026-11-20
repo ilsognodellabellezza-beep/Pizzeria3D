@@ -3,7 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPublicSupabase } from "./supabase/server";
 import { isSupabaseConfigured } from "./supabase/env";
 import type {
+  ActivePromotion,
   Category,
+  DiscountCode,
+  Promotion,
   Closure,
   DeliveryZone,
   MenuCategory,
@@ -33,9 +36,11 @@ export const DEFAULT_SETTINGS: Settings = {
   phone_landline: "095 356828",
   whatsapp: null,
   email: null,
-  company_name: "Nati x la Pizza",
+  company_name: "Epic Pizza",
   vat_number: null,
   announcement: null,
+  reservations_url: null,
+  app_install_url: null,
 };
 
 export const DEFAULT_HOURS: OpeningHour[] = [
@@ -130,8 +135,33 @@ export async function getZones(client?: SupabaseClient): Promise<DeliveryZone[]>
   }));
 }
 
+/** Il pagamento online è offerto solo se Stripe è configurato sul server */
+export const stripeConfigured = Boolean((process.env.STRIPE_SECRET_KEY ?? "").trim());
+
+/**
+ * Promozioni in corso oggi (data di Roma): inizio e fine sono automatici.
+ * Il codice sconto compare solo se il titolare lo ha reso visibile dal gestionale.
+ */
+export async function getActivePromotions(): Promise<ActivePromotion[]> {
+  if (!isSupabaseConfigured) return [];
+  const sb = getPublicSupabase();
+  const today = romeDateKey(new Date());
+  const { data } = await sb
+    .from("promotions")
+    .select("*")
+    .eq("is_active", true)
+    .lte("starts_on", today)
+    .gte("ends_on", today)
+    .order("ends_on");
+  const promos = (data ?? []) as Promotion[];
+  if (promos.length === 0) return [];
+  const { data: codes } = await sb.from("discount_codes").select("*").eq("is_visible", true).eq("is_active", true);
+  const byCode = new Map(((codes ?? []) as DiscountCode[]).map((c) => [c.code, c]));
+  return promos.map((p) => ({ ...p, visible_code: (p.discount_code && byCode.get(p.discount_code)) || null }));
+}
+
 /** Dati pubblici usati da header, footer, badge orari */
 export async function getPublicInfo() {
   const [settings, hours, closures] = await Promise.all([getSettings(), getHours(), getClosures()]);
-  return { settings, hours, closures };
+  return { settings: { ...settings, pay_online: settings.pay_online && stripeConfigured }, hours, closures };
 }

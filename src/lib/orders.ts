@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
-import { getClosures, getHours, getMenu, getSettings, getZones } from "./data";
+import { getClosures, getHours, getMenu, getSettings, getZones, stripeConfigured } from "./data";
+import { createCheckoutSession } from "./stripe";
 import { geocodeAddress } from "./geocode";
 import { applyDiscount, deliveryFee, formatEuro, priceLine, round2 } from "./pricing";
 import { buildSlotPlan, isValidSlot, type SlotPlan } from "./schedule";
@@ -59,8 +60,8 @@ export const orderSchema = quoteSchema.extend({
     .regex(/^\+?[\d\s./-]{8,20}$/, "Numero di telefono non valido"),
   email: z.string().trim().email("Email non valida").max(120).optional().or(z.literal("")),
   notes: z.string().trim().max(500).optional().default(""),
-  // il pagamento avviene sempre alla consegna/al ritiro (contanti o POS)
-  paymentMethod: z.enum(["cash", "pos"]),
+  // online = carta con Stripe; contanti/POS si pagano alla consegna o al ritiro
+  paymentMethod: z.enum(["online", "cash", "pos"]),
   changeFor: z.number().min(0).max(500).optional().nullable(),
   acceptTerms: z.literal(true, { message: "Devi accettare termini e privacy" }),
   marketingConsent: z.boolean().optional().default(false),
@@ -202,6 +203,7 @@ export async function createOrder(input: OrderInput, authUserId: string | null) 
   if (input.type === "delivery" && !settings.delivery_enabled) throw new OrderError("La consegna non è disponibile al momento.");
 
   const payAllowed: Record<PaymentMethod, boolean> = {
+    online: settings.pay_online && stripeConfigured,
     cash: settings.pay_cash,
     pos: settings.pay_pos,
   };
@@ -226,6 +228,8 @@ export async function createOrder(input: OrderInput, authUserId: string | null) 
     scheduledFor = input.slot;
   }
 
+  const online = input.paymentMethod === "online";
+
   // Cliente
   const customerId = await upsertCustomer(sb, input, authUserId);
 
@@ -237,7 +241,7 @@ export async function createOrder(input: OrderInput, authUserId: string | null) 
     .insert({
       customer_id: customerId,
       type: input.type,
-      status: "nuovo",
+      status: online ? "in_attesa_pagamento" : "nuovo",
       asap: input.asap,
       scheduled_for: scheduledFor,
       customer_name: `${input.firstName} ${input.lastName}`.trim(),
@@ -253,7 +257,7 @@ export async function createOrder(input: OrderInput, authUserId: string | null) 
       discount_code: quote.discount > 0 ? input.discountCode?.toUpperCase() : null,
       total: quote.total,
       payment_method: input.paymentMethod,
-      payment_status: "unpaid",
+      payment_status: online ? "pending" : "unpaid",
       change_for: input.paymentMethod === "cash" ? (input.changeFor ?? null) : null,
       notes: input.notes || null,
       marketing_consent: input.marketingConsent,
@@ -288,10 +292,23 @@ export async function createOrder(input: OrderInput, authUserId: string | null) 
     }
   }
 
+  // Pagamento online: l'ordine resta "in attesa" finché il webhook Stripe non conferma l'incasso
+  if (online) {
+    try {
+      const checkoutUrl = await createCheckoutSession({ id: order.id, number: order.number, total: quote.total, email: input.email || null });
+      return { id: order.id as string, number: order.number as number, total: quote.total, checkoutUrl: checkoutUrl as string | null };
+    } catch (e) {
+      console.error(e);
+      await sb.from("orders").update({ status: "annullato", payment_status: "failed", status_reason: "Pagamento online non avviato" }).eq("id", order.id);
+      await releaseDiscount(order.id);
+      throw new OrderError("Non riusciamo ad avviare il pagamento online. Scegli un altro metodo o riprova.", "paymentMethod");
+    }
+  }
+
   const full = await getOrderWithItems(order.id);
   if (full) await sendOrderConfirmation(full);
 
-  return { id: order.id as string, number: order.number as number, total: quote.total };
+  return { id: order.id as string, number: order.number as number, total: quote.total, checkoutUrl: null as string | null };
 }
 
 async function upsertCustomer(

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Plus, Trash2 } from "lucide-react";
@@ -7,6 +8,11 @@ import { addClosure, deleteClosure, deleteZone, saveHours, saveSettings, saveZon
 import { WEEKDAY_LABELS, formatDate } from "@/lib/time";
 import type { Closure, DeliveryZone, OpeningHour, Settings } from "@/lib/types";
 import { adminInput, Card, PrimaryButton, SecondaryButton, Toggle } from "./ui";
+
+const ZoneMapEditor = dynamic(() => import("./ZoneMapEditor"), {
+  ssr: false,
+  loading: () => <div className="h-[420px] w-full animate-pulse rounded-2xl bg-lava/10" />,
+});
 
 type Result = { ok: boolean; error?: string };
 const ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -61,8 +67,8 @@ function GeneralSettings({ settings, pending, onSave }: { settings: Settings; pe
     </label>
   );
   const save = () => {
-    const { prep_time_pickup, prep_time_delivery, slot_minutes, slot_capacity, days_ahead, pause_message, pay_cash, pay_pos, pickup_enabled, delivery_enabled, phone, phone_landline, whatsapp, email, announcement } = s;
-    onSave({ prep_time_pickup, prep_time_delivery, slot_minutes, slot_capacity, days_ahead, pause_message, pay_cash, pay_pos, pickup_enabled, delivery_enabled, phone, phone_landline, whatsapp, email, announcement });
+    const { prep_time_pickup, prep_time_delivery, slot_minutes, slot_capacity, days_ahead, pause_message, pay_online, pay_cash, pay_pos, pickup_enabled, delivery_enabled, phone, phone_landline, whatsapp, email, announcement, reservations_url, app_install_url } = s;
+    onSave({ prep_time_pickup, prep_time_delivery, slot_minutes, slot_capacity, days_ahead, pause_message, pay_online, pay_cash, pay_pos, pickup_enabled, delivery_enabled, phone, phone_landline, whatsapp, email, announcement, reservations_url, app_install_url });
   };
   return (
     <>
@@ -80,9 +86,11 @@ function GeneralSettings({ settings, pending, onSave }: { settings: Settings; pe
         </div>
         <p className="mt-4 text-sm font-medium">Metodi di pagamento</p>
         <div className="flex flex-wrap gap-x-6">
+          <Toggle checked={s.pay_online} onChange={(v) => setS({ ...s, pay_online: v })} label="Carta online (Stripe)" />
           <Toggle checked={s.pay_cash} onChange={(v) => setS({ ...s, pay_cash: v })} label="Contanti" />
           <Toggle checked={s.pay_pos} onChange={(v) => setS({ ...s, pay_pos: v })} label="POS alla consegna/ritiro" />
         </div>
+        <p className="mt-1 text-xs text-pietra">La carta online compare al cliente solo se sul server sono configurate le chiavi Stripe (STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET).</p>
         <div className="mt-4 grid gap-3">
           {text("pause_message", "Messaggio quando gli ordini sono sospesi")}
           {text("announcement", "Avviso in cima al sito (vuoto = nessuno)", "Es. Chiusi per ferie dal 10 al 20 gennaio")}
@@ -94,6 +102,8 @@ function GeneralSettings({ settings, pending, onSave }: { settings: Settings; pe
           {text("phone_landline", "Telefono fisso")}
           {text("whatsapp", "WhatsApp (solo numeri, con prefisso 39)")}
           {text("email", "Email")}
+          {text("reservations_url", "Link prenotazioni (per il QR code)", "https://… (vuoto = si chiama il locale)")}
+          {text("app_install_url", "Link installazione app (per il QR code)", "vuoto = pagina «Installa l'app» del sito")}
         </div>
       </Card>
       <PrimaryButton disabled={pending} onClick={save} className="w-full sm:w-auto">Salva impostazioni</PrimaryButton>
@@ -159,6 +169,10 @@ function ZonesEditor({ zones, onSave, onDelete }: { zones: DeliveryZone[]; onSav
   const [adding, setAdding] = useState(false);
   return (
     <Card title="Zone di consegna" actions={<SecondaryButton onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Zona</SecondaryButton>}>
+      <div className="mb-5">
+        <h3 className="mb-2 font-semibold">Mappa di Catania: dove consegniamo</h3>
+        <ZoneMapEditor zones={zones} onSave={onSave} />
+      </div>
       <p className="mb-3 text-sm text-pietra">
         Le zone sono controllate in ordine: la prima che contiene l&apos;indirizzo vince. Usa il raggio in km dal locale oppure incolla un poligono GeoJSON (coordinate [lng, lat]) disegnato ad es. su geojson.io.
       </p>

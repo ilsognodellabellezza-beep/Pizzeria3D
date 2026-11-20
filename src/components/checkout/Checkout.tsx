@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Clock, CreditCard, Loader2, MapPin, Pencil, Tag, Wallet } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, CreditCard, Loader2, MapPin, Pencil, Phone, Tag, Wallet } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
 import { ModeToggle } from "@/components/cart/ModeToggle";
 import { useSiteInfo } from "@/components/site/SiteInfo";
@@ -57,7 +57,7 @@ export function Checkout() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
-  const [payment, setPayment] = useState<PaymentMethod>(settings.pay_cash || !settings.pay_pos ? "cash" : "pos");
+  const [payment, setPayment] = useState<PaymentMethod>(settings.pay_cash ? "cash" : settings.pay_pos ? "pos" : settings.pay_online ? "online" : "cash");
   const [changeFor, setChangeFor] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [discountCode, setDiscountCode] = useState<string | undefined>();
@@ -229,7 +229,9 @@ export function Checkout() {
         return;
       }
       clear();
-      router.push(`/ordine/${data.id}?nuovo=1`);
+      // pagamento con carta: si passa alla pagina sicura di Stripe
+      if (data.checkoutUrl) window.location.href = data.checkoutUrl;
+      else router.push(`/ordine/${data.id}?nuovo=1`);
     } catch {
       setSubmitError({ message: "Connessione non riuscita. Riprova." });
     } finally {
@@ -423,6 +425,10 @@ export function Checkout() {
               <label htmlFor="em" className={label}>Email <span className="font-normal text-pietra">(per la conferma)</span></label>
               <input id="em" type="email" autoComplete="email" className={input} value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={submitError?.field === "email"} />
             </div>
+            <p className="flex gap-2 rounded-xl bg-oro/15 p-3 text-sm font-medium sm:col-span-2" role="note">
+              <Phone className="mt-0.5 h-4 w-4 shrink-0 text-oro-dark" aria-hidden="true" />
+              <span>Inserisci un numero raggiungibile: se il recapito telefonico è errato o irreperibile l&apos;ordine non parte.</span>
+            </p>
             <div className="sm:col-span-2">
               <label htmlFor="notes" className={label}>Note sull&apos;ordine</label>
               <textarea id="notes" rows={2} className={`${input} h-auto py-3`} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Allergie, richieste particolari…" />
@@ -433,6 +439,12 @@ export function Checkout() {
         {/* 4. Pagamento */}
         <Card step={4} title="Pagamento">
           <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Metodo di pagamento">
+            {settings.pay_online && (
+              <Choice active={payment === "online"} onClick={() => setPayment("online")}>
+                <CreditCard className="h-5 w-5" aria-hidden="true" />
+                <span className="text-left leading-tight">Carta online<span className="block text-xs font-normal opacity-75">paghi subito, in modo sicuro</span></span>
+              </Choice>
+            )}
             {settings.pay_cash && (
               <Choice active={payment === "cash"} onClick={() => setPayment("cash")}>
                 <Wallet className="h-5 w-5" aria-hidden="true" />
@@ -508,7 +520,10 @@ export function Checkout() {
           )}
           {quoteError && <p className="mt-3 rounded-xl bg-brace/10 p-3 text-sm text-brace" role="alert">{quoteError}</p>}
 
-          <div className="mt-5 space-y-3 text-sm">
+          <p className="mt-5 rounded-xl bg-oro/15 p-3 text-xs font-medium">
+            Attenzione: se il numero di telefono indicato è errato o irreperibile, l&apos;ordine non parte.
+          </p>
+          <div className="mt-4 space-y-3 text-sm">
             <label className="flex cursor-pointer gap-3">
               <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-brace" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} required />
               <span>
@@ -536,7 +551,7 @@ export function Checkout() {
             className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brace text-lg font-semibold text-white shadow-lg shadow-brace/25 transition hover:bg-brace-dark disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
           >
             {submitting && <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />}
-            {`Conferma ordine · ${formatEuro(total)}`}
+            {payment === "online" ? `Paga online · ${formatEuro(total)}` : `Conferma ordine · ${formatEuro(total)}`}
           </button>
           {!canSubmit && !submitting && <p className="mt-2 text-center text-xs text-pietra">{hint({ addressVerified, mode, missing, plan, when, slot, acceptTerms })}</p>}
           <p className="mt-3 text-center text-xs text-pietra">

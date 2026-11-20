@@ -5,7 +5,10 @@ import { ProductImage } from "@/components/menu/ProductImage";
 import { HoursTable } from "@/components/site/HoursTable";
 import { LocationMap } from "@/components/site/LocationMap";
 import { OpenBadge } from "@/components/site/OpenBadge";
-import { getMenu, getPublicInfo } from "@/lib/data";
+import { EpicLogo } from "@/components/site/Logo";
+import { PromoSection } from "@/components/site/PromoSection";
+import { QrCodes } from "@/components/site/QrCodes";
+import { getActivePromotions, getMenu, getPublicInfo } from "@/lib/data";
 import { jsonLdScript, restaurantJsonLd } from "@/lib/jsonld";
 import { formatEuro } from "@/lib/pricing";
 import { fullAddress, telHref } from "@/lib/site";
@@ -13,7 +16,7 @@ import { fullAddress, telHref } from "@/lib/site";
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [{ settings, hours }, menu] = await Promise.all([getPublicInfo(), getMenu()]);
+  const [{ settings, hours }, menu, promotions] = await Promise.all([getPublicInfo(), getMenu(), getActivePromotions()]);
   const featured = menu
     .flatMap((c) => c.products.filter((p) => p.is_featured && p.is_available).map((p) => ({ ...p, slug: c.slug })))
     .slice(0, 6);
@@ -22,32 +25,39 @@ export default async function HomePage() {
     <>
       {/* HERO */}
       <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden text-crema sm:items-center">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,#5a2518_0%,#2a1a14_45%,#141211_100%)]" aria-hidden="true" />
-        <div className="relative mx-auto w-full max-w-7xl px-4 pb-28 pt-32 sm:px-6 sm:pb-16">
+        <div className="bg-epic-texture absolute inset-0" aria-hidden="true" />
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-8 px-4 pb-28 pt-32 sm:px-6 sm:pb-16 lg:grid-cols-[1fr_auto]">
           <div className="max-w-2xl">
             <OpenBadge />
             <p className="mt-6 text-sm font-semibold uppercase tracking-[0.25em] text-oro">Pizzeria · Hamburgheria · Catania</p>
             <h1 className="mt-3 font-serif text-5xl font-bold leading-[1.05] sm:text-7xl">
-              Impasto leggero, <span className="block italic text-oro">anima catanese.</span>
+              Impasto leggero, <span className="block italic text-oro-light">anima catanese.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg text-crema/85">
               Pizze normali e maxi, pizzoli, pinse, calzoni e smash burger. Ordina online per asporto o consegna a domicilio, dal cuore di Cibali.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/ordina" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-brace px-8 text-lg font-semibold text-white shadow-xl shadow-brace/30 transition hover:bg-brace-dark">
+              <Link href="/ordina" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-8 text-lg font-semibold text-brace-dark shadow-xl shadow-black/30 transition hover:bg-crema">
                 Ordina ora <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Link>
               <Link href="/menu" className="inline-flex h-14 items-center justify-center rounded-full border border-crema/40 px-8 text-lg font-semibold text-crema backdrop-blur transition hover:bg-white/10">
                 Sfoglia il menù
               </Link>
             </div>
-            <p className="mt-8 text-sm uppercase tracking-[0.3em] text-crema/60">↓ Scorri: guarda nascere la tua pizza</p>
+            <p className="mt-8 text-sm uppercase tracking-[0.3em] text-crema/70">↓ Scorri: guarda nascere la tua pizza</p>
+          </div>
+          <div className="order-first mx-auto lg:order-none">
+            <div className="rounded-full bg-crema p-3 shadow-2xl shadow-black/40 ring-4 ring-white/20 sm:p-4">
+              <EpicLogo priority className="h-40 w-40 sm:h-64 sm:w-64 lg:h-96 lg:w-96" />
+            </div>
           </div>
         </div>
       </section>
 
       {/* ANIMAZIONE 3D: dall'impasto al forno */}
       <PizzaStory />
+
+      <PromoSection promotions={promotions} />
 
       {/* SPECIALITÀ */}
       <section className="bg-farina py-20" aria-labelledby="specialita">
@@ -98,10 +108,10 @@ export default async function HomePage() {
       </section>
 
       {/* COME ORDINARE */}
-      <section className="bg-lava-texture py-20 text-crema" aria-labelledby="come">
+      <section className="bg-epic-texture py-20 text-crema" aria-labelledby="come">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-oro">Ordina online</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-oro-light">Ordina online</p>
             <h2 id="come" className="mt-2 font-serif text-4xl font-bold">A casa tua o al banco</h2>
             <p className="mt-5 text-lg text-crema/80">
               Scegli i piatti, personalizza gli ingredienti, scegli l&apos;orario e segui l&apos;ordine in tempo reale. Senza commissioni.
@@ -121,6 +131,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <QrCodes settings={settings} />
 
       {/* DOVE SIAMO */}
       <section className="bg-farina py-20" aria-labelledby="dove">

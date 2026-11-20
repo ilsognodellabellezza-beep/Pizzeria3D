@@ -11,7 +11,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Contatti e orari",
-  description: `Indirizzo, telefono e orari di Nati x la Pizza: ${fullAddress}.`,
+  description: `Indirizzo, telefono e orari di Epic Pizza: ${fullAddress}.`,
   alternates: { canonical: "/contatti" },
 };
 

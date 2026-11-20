@@ -20,8 +20,8 @@ export function normalizeOrigin(value: string | undefined, fallback: string): st
 
 // Dati statici del locale. I recapiti modificabili (telefono, email…) stanno nella tabella `settings`.
 export const SITE = {
-  name: "Nati x la Pizza",
-  fullName: "Nati x la Pizza – Pizzeria e Hamburgheria a Catania",
+  name: "Epic Pizza",
+  fullName: "Epic Pizza – Pizzeria e Hamburgheria a Catania",
   claim: "Impasto leggero, anima catanese.",
   description:
     "Pizzeria a Catania, zona Cibali: pizze normali e maxi, pizzoli, pinse, calzoni, smash burger e pan panini. Ordina online per asporto o consegna a domicilio.",

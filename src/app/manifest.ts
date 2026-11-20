@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Nati x la Pizza",
-    short_name: "Nati x la Pizza",
+    name: "Epic Pizza",
+    short_name: "Epic Pizza",
     description: "Pizze, panini e smash burger a Catania. Ordina online per asporto o consegna.",
     start_url: "/ordina",
     scope: "/",

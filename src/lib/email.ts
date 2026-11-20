@@ -6,7 +6,7 @@ import { formatDateTime, formatTime } from "./time";
 import { PAYMENT_LABELS, statusLabel, TYPE_LABELS } from "./order-status";
 import type { OrderWithItems } from "./types";
 
-const FROM = process.env.EMAIL_FROM ?? "Nati x la Pizza <ordini@natixlapizza.it>";
+const FROM = process.env.EMAIL_FROM ?? "Epic Pizza <ordini@natixlapizza.it>";
 
 function getResend(): Resend | null {
   return process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -18,7 +18,7 @@ function layout(title: string, body: string) {
   return `<!doctype html><html lang="it"><body style="margin:0;background:#F6F0E6;font-family:Helvetica,Arial,sans-serif;color:#1C1A19">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
   <table width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden" cellpadding="0" cellspacing="0">
-    <tr><td style="background:#1C1A19;padding:20px 24px;color:#D4A24C;font-family:Georgia,serif;font-size:22px">Nati x la Pizza</td></tr>
+    <tr><td style="background:#1C1A19;padding:20px 24px;color:#D4A24C;font-family:Georgia,serif;font-size:22px">Epic Pizza</td></tr>
     <tr><td style="padding:24px"><h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 12px">${esc(title)}</h1>${body}</td></tr>
     <tr><td style="padding:16px 24px;background:#F6F0E6;font-size:12px;color:#6b635c">${esc(fullAddress)}</td></tr>
   </table></td></tr></table></body></html>`;
@@ -65,7 +65,7 @@ export async function sendOrderConfirmation(order: OrderWithItems) {
     await resend.emails.send({
       from: FROM,
       to: order.customer_email,
-      subject: `Ordine n° ${order.number} ricevuto — Nati x la Pizza`,
+      subject: `Ordine n° ${order.number} ricevuto — Epic Pizza`,
       html: layout("Abbiamo ricevuto il tuo ordine", body),
     });
   } catch (e) {

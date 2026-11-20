@@ -55,14 +55,14 @@ async function geocodeUncached(q: { street: string; number?: string; city: strin
     });
     if (q.cap) params.set("postalcode", q.cap);
     let res = await throttled(() => fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-      headers: { "User-Agent": "NatiXLaPizza/1.0 (ordini online)", "Accept-Language": "it" },
+      headers: { "User-Agent": "EpicPizza/1.0 (ordini online)", "Accept-Language": "it" },
       cache: "no-store",
     }));
     let data = await res.json();
     if (!data?.length) {
       // riprovo con ricerca libera (civici non sempre mappati su OSM)
       res = await throttled(() => fetch(`https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: line, format: "jsonv2", limit: "1", addressdetails: "1" })}`, {
-        headers: { "User-Agent": "NatiXLaPizza/1.0 (ordini online)", "Accept-Language": "it" },
+        headers: { "User-Agent": "EpicPizza/1.0 (ordini online)", "Accept-Language": "it" },
         cache: "no-store",
       }));
       data = await res.json();

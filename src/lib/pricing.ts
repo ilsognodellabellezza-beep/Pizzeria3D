@@ -95,6 +95,7 @@ export type DiscountResult = { ok: true; amount: number; label: string } | { ok:
 
 export function applyDiscount(code: DiscountCode | null, subtotal: number, now = new Date()): DiscountResult {
   if (!code || !code.is_active) return { ok: false, error: "Codice sconto non valido" };
+  if (code.starts_at && new Date(code.starts_at) > now) return { ok: false, error: "Codice sconto non ancora attivo" };
   if (code.expires_at && new Date(code.expires_at) <= now) return { ok: false, error: "Codice sconto scaduto" };
   if (code.max_uses != null && code.used >= code.max_uses) return { ok: false, error: "Codice sconto esaurito" };
   if (subtotal < Number(code.min_order))

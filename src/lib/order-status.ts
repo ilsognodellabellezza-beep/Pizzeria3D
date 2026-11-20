@@ -36,6 +36,7 @@ export const ACTIVE_STATUSES: OrderStatus[] = ["nuovo", "accettato", "in_prepara
 export const FINAL_STATUSES: OrderStatus[] = ["completato", "rifiutato", "annullato"];
 
 export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+  online: "Pagato online",
   cash: "Contanti",
   pos: "POS (carta)",
 };

@@ -7,6 +7,7 @@ import { sendStatusUpdate } from "@/lib/email";
 import { getOrderWithItems, releaseDiscount } from "@/lib/orders";
 import { NEXT_STATUS } from "@/lib/order-status";
 import { getServiceSupabase } from "@/lib/supabase/server";
+import { addDays, romeToDate } from "@/lib/time";
 import type { OrderStatus } from "@/lib/types";
 
 type Result = { ok: true } | { ok: false, error: string };
@@ -282,6 +283,7 @@ const settingsSchema = z.object({
   slot_capacity: z.number().int().min(1).max(200),
   days_ahead: z.number().int().min(0).max(14),
   pause_message: z.string().max(300).nullable(),
+  pay_online: z.boolean(),
   pay_cash: z.boolean(),
   pay_pos: z.boolean(),
   pickup_enabled: z.boolean(),
@@ -291,13 +293,15 @@ const settingsSchema = z.object({
   whatsapp: z.string().max(20).nullable(),
   email: z.string().max(120).nullable(),
   announcement: z.string().max(200).nullable(),
+  reservations_url: z.string().trim().max(300).nullable(),
+  app_install_url: z.string().trim().max(300).nullable(),
 });
 
 export async function saveSettings(input: z.infer<typeof settingsSchema>): Promise<Result> {
   return run(async () => {
     const { sb } = await requireStaffAction(true);
     const d = settingsSchema.parse(input);
-    check(await sb.from("settings").update({ ...d, announcement: d.announcement || null, updated_at: new Date().toISOString() }).eq("id", 1));
+    check(await sb.from("settings").update({ ...d, announcement: d.announcement || null, reservations_url: d.reservations_url || null, app_install_url: d.app_install_url || null, updated_at: new Date().toISOString() }).eq("id", 1));
     refreshPublic();
   });
 }
@@ -374,9 +378,11 @@ const discountSchema = z.object({
   type: z.enum(["percent", "fixed"]),
   value: z.number().positive().max(1000),
   min_order: z.number().min(0).max(1000),
+  starts_at: z.string().nullable(),
   expires_at: z.string().nullable(),
   max_uses: z.number().int().positive().nullable(),
   is_active: z.boolean(),
+  is_visible: z.boolean(),
 });
 
 export async function saveDiscount(input: z.infer<typeof discountSchema>): Promise<Result> {
@@ -388,10 +394,12 @@ export async function saveDiscount(input: z.infer<typeof discountSchema>): Promi
       await sb.from("discount_codes").upsert({
         ...d,
         code: d.code.toUpperCase(),
+        starts_at: d.starts_at ? new Date(d.starts_at).toISOString() : null,
         expires_at: d.expires_at ? new Date(d.expires_at).toISOString() : null,
       }),
     );
     revalidatePath("/admin/promozioni");
+    refreshPublic();
   });
 }
 
@@ -400,5 +408,65 @@ export async function deleteDiscount(code: string): Promise<Result> {
     const { sb } = await requireStaffAction(true);
     check(await sb.from("discount_codes").delete().eq("code", code));
     revalidatePath("/admin/promozioni");
+    refreshPublic();
+  });
+}
+
+/** Mostra/nasconde il codice sconto nelle promozioni del sito */
+export async function setDiscountVisible(code: string, visible: boolean): Promise<Result> {
+  return run(async () => {
+    const { sb } = await requireStaffAction(true);
+    check(await sb.from("discount_codes").update({ is_visible: visible }).eq("code", code));
+    revalidatePath("/admin/promozioni");
+    refreshPublic();
+  });
+}
+
+const dateKey = z.string().regex(/^d{4}-d{2}-d{2}$/, "Data non valida");
+const promotionSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().trim().min(2, "Inserisci un titolo").max(80),
+  description: z.string().trim().max(400).nullable(),
+  starts_on: dateKey,
+  ends_on: dateKey,
+  discount_code: z.string().trim().max(30).nullable(),
+  is_active: z.boolean(),
+});
+
+/**
+ * Salva una promozione. Se è collegata a un codice sconto, il codice valido
+ * esattamente dal primo all'ultimo giorno (ora di Roma): l'attivazione è automatica.
+ */
+export async function savePromotion(input: z.infer<typeof promotionSchema>): Promise<Result> {
+  return run(async () => {
+    const { sb } = await requireStaffAction(true);
+    const d = promotionSchema.parse(input);
+    if (d.ends_on < d.starts_on) throw new Error("La data di fine non può precedere quella di inizio");
+    const { id, ...row } = d;
+    const code = row.discount_code ? row.discount_code.toUpperCase() : null;
+    if (id) check(await sb.from("promotions").update({ ...row, discount_code: code }).eq("id", id));
+    else check(await sb.from("promotions").insert({ ...row, discount_code: code }));
+    if (code) {
+      check(
+        await sb
+          .from("discount_codes")
+          .update({
+            starts_at: romeToDate(row.starts_on, 0).toISOString(),
+            expires_at: romeToDate(addDays(row.ends_on, 1), 0).toISOString(),
+          })
+          .eq("code", code),
+      );
+    }
+    revalidatePath("/admin/promozioni");
+    refreshPublic();
+  });
+}
+
+export async function deletePromotion(id: string): Promise<Result> {
+  return run(async () => {
+    const { sb } = await requireStaffAction(true);
+    check(await sb.from("promotions").delete().eq("id", id));
+    revalidatePath("/admin/promozioni");
+    refreshPublic();
   });
 }

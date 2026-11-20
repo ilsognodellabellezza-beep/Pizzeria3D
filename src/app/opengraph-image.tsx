@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
+import { LOGO_DATA_URI } from "@/lib/icon-art";
 
-export const alt = "Nati x la Pizza — Pizza, panini e smash burger a Catania";
+export const alt = "Epic Pizza — Pizza, panini e smash burger a Catania";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -13,9 +14,11 @@ export default function OgImage() {
           <path d="M575 230 L610 210 L655 210 L690 230 L665 245 L640 235 L620 252 L595 242 Z" fill="#f6f0e6" opacity="0.25" />
           <path d="M640 215 C 630 260, 665 290, 650 335 S 685 410, 668 470" stroke="#c8412b" strokeWidth="6" fill="none" />
         </svg>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={LOGO_DATA_URI} width={220} height={221} alt="" style={{ position: "absolute", right: 80, top: 70 }} />
         <div style={{ display: "flex", fontSize: 28, letterSpacing: 6, color: "#d4a24c", textTransform: "uppercase" }}>Pizzeria · Hamburgheria · Catania</div>
-        <div style={{ display: "flex", fontSize: 96, fontWeight: 700, marginTop: 12 }}>Nati x la Pizza</div>
-        <div style={{ display: "flex", fontSize: 40, marginTop: 8, color: "#ecd3a0" }}>Impasto leggero, gusto siciliano.</div>
+        <div style={{ display: "flex", fontSize: 96, fontWeight: 700, marginTop: 12 }}>Epic Pizza</div>
+        <div style={{ display: "flex", fontSize: 40, marginTop: 8, color: "#ecd3a0" }}>Impasto leggero, anima catanese.</div>
       </div>
     ),
     size,

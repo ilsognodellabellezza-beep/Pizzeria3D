@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     url: SITE.url,
   },
   twitter: { card: "summary_large_image" },
-  appleWebApp: { capable: true, title: "Nati x la Pizza", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "Epic Pizza", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: true },
 };
 

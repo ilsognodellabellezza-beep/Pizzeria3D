@@ -8,7 +8,7 @@ export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Ordina online",
-  description: "Ordina pizza, panini e smash burger da Nati x la Pizza: asporto al locale o consegna a domicilio a Catania. Senza commissioni.",
+  description: "Ordina pizza, panini e smash burger da Epic Pizza: asporto al locale o consegna a domicilio a Catania. Senza commissioni.",
   alternates: { canonical: "/ordina" },
 };
 

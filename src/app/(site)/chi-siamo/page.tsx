@@ -5,7 +5,7 @@ import { PageHero } from "@/components/site/PageHero";
 
 export const metadata: Metadata = {
   title: "Chi siamo",
-  description: "La storia di Nati x la Pizza a Catania: impasto leggero a lunga maturazione, specialità al pistacchio e smash burger, dal forno a casa tua.",
+  description: "La storia di Epic Pizza a Catania: impasto leggero a lunga maturazione, specialità al pistacchio e smash burger, dal forno a casa tua.",
   alternates: { canonical: "/chi-siamo" },
 };
 

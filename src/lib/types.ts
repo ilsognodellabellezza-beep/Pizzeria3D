@@ -96,6 +96,8 @@ export type Settings = {
   company_name: string | null;
   vat_number: string | null;
   announcement: string | null;
+  reservations_url: string | null;
+  app_install_url: string | null;
 };
 
 export type OrderType = "pickup" | "delivery";
@@ -111,7 +113,7 @@ export type OrderStatus =
   | "rifiutato"
   | "annullato";
 
-export type PaymentMethod = "cash" | "pos";
+export type PaymentMethod = "online" | "cash" | "pos";
 
 export type OrderAddress = {
   street: string;
@@ -212,12 +214,29 @@ export type DiscountCode = {
   type: "percent" | "fixed";
   value: number;
   min_order: number;
+  starts_at: string | null;
   expires_at: string | null;
   max_uses: number | null;
   used: number;
   is_active: boolean;
+  /** se true il codice è mostrato nelle promozioni del sito */
+  is_visible: boolean;
   created_at: string;
 };
+
+export type Promotion = {
+  id: string;
+  title: string;
+  description: string | null;
+  starts_on: string; // YYYY-MM-DD
+  ends_on: string;
+  discount_code: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+/** Promozione in corso, con il codice (solo se il titolare ha scelto di mostrarlo) */
+export type ActivePromotion = Promotion & { visible_code: DiscountCode | null };
 
 /** Riga carrello lato client (solo riferimenti: i prezzi vengono ricalcolati dal server) */
 export type CartLine = {
