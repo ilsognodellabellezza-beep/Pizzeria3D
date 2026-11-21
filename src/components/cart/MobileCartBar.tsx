@@ -10,11 +10,11 @@ export function MobileCartBar() {
   const pathname = usePathname();
   if (!hydrated || count === 0 || pathname.startsWith("/checkout") || pathname.startsWith("/ordine/")) return null;
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+    <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 px-3 pb-2 lg:hidden">
       <button
         type="button"
         onClick={() => setDrawerOpen(true)}
-        className="animate-slide-up flex h-14 w-full items-center justify-between rounded-full bg-brace px-5 text-white shadow-xl shadow-black/25"
+        className="animate-slide-up flex h-12 w-full items-center justify-between rounded-full bg-brace px-5 text-white shadow-xl shadow-black/25"
       >
         <span className="flex items-center gap-3">
           <span key={bump} className="relative animate-pop">

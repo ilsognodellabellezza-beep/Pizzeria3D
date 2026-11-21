@@ -24,7 +24,7 @@ export function CookieBanner() {
     setShow(false);
   };
   return (
-    <div className="fixed inset-x-3 bottom-20 z-50 mx-auto max-w-xl rounded-2xl bg-lava p-5 text-sm text-crema shadow-2xl ring-1 ring-white/10 lg:bottom-4" role="dialog" aria-label="Preferenze cookie">
+    <div className="fixed inset-x-3 bottom-24 z-50 mx-auto max-w-xl rounded-2xl bg-lava p-5 text-sm text-crema shadow-2xl ring-1 ring-white/10 lg:bottom-4" role="dialog" aria-label="Preferenze cookie">
       <p>
         Usiamo solo cookie tecnici necessari al funzionamento del sito (carrello, accesso). Nessun cookie di profilazione.{" "}
         <Link href="/cookie" className="text-oro underline underline-offset-2">Cookie policy</Link>

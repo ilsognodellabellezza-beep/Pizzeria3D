@@ -4,7 +4,7 @@ import { cleanEnv, SITE } from "./site";
 
 /** Pagamento online con Stripe Checkout, via API REST (nessun SDK). Richiede STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET. */
 const secretKey = () => cleanEnv(process.env.STRIPE_SECRET_KEY);
-export const isStripeConfigured = () => Boolean(secretKey());
+export const isStripeConfigured = () => Boolean(secretKey()) && Boolean(cleanEnv(process.env.STRIPE_WEBHOOK_SECRET));
 
 export async function createCheckoutSession(order: { id: string; number: number; total: number; email: string | null }): Promise<string> {
   const key = secretKey();

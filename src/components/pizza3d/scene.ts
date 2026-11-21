@@ -13,6 +13,7 @@ import {
   rng,
   salameTexture,
   sauceTexture,
+  setTexScale,
   smoothstep,
   softSprite,
   woodTexture,
@@ -104,7 +105,7 @@ function patchMaterial(
 }
 
 /* ---------- geometrie ---------- */
-function buildCrust() {
+function buildCrust(lite: boolean) {
   const bottom = [new THREE.Vector2(0, 0), new THREE.Vector2(0.9, 0)];
   const rimCtrl = [
     [1.6, 0],
@@ -119,9 +120,9 @@ function buildCrust() {
     [1.6, 0.2],
     [1.52, 0.155],
   ].map(([x, y]) => new THREE.Vector2(x, y));
-  const rim = new THREE.SplineCurve(rimCtrl).getPoints(56);
+  const rim = new THREE.SplineCurve(rimCtrl).getPoints(lite ? 32 : 56);
   const top = [new THREE.Vector2(0.9, 0.15), new THREE.Vector2(0, 0.15)];
-  let geo: THREE.BufferGeometry = new THREE.LatheGeometry([...bottom, ...rim, ...top], 200);
+  let geo: THREE.BufferGeometry = new THREE.LatheGeometry([...bottom, ...rim, ...top], lite ? 96 : 200);
 
   const pos = geo.attributes.position as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) {
@@ -163,8 +164,8 @@ function planarUV(geo: THREE.BufferGeometry) {
   geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
 }
 
-function buildDisc(radius: number, rings: number, height: (x: number, z: number) => number) {
-  const geo = new THREE.RingGeometry(0.0001, radius, 160, rings);
+function buildDisc(radius: number, rings: number, segs: number, height: (x: number, z: number) => number) {
+  const geo = new THREE.RingGeometry(0.0001, radius, segs, rings);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) pos.setY(i, height(pos.getX(i), pos.getZ(i)));
@@ -173,8 +174,8 @@ function buildDisc(radius: number, rings: number, height: (x: number, z: number)
   return geo;
 }
 
-function buildSalameGeo() {
-  const geo = new THREE.CylinderGeometry(0.255, 0.255, 0.034, 32, 1);
+function buildSalameGeo(lite: boolean) {
+  const geo = new THREE.CylinderGeometry(0.255, 0.255, 0.034, lite ? 16 : 32, 1);
   const pos = geo.attributes.position as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) {
     const rr = Math.hypot(pos.getX(i), pos.getZ(i)) / 0.255;
@@ -184,14 +185,14 @@ function buildSalameGeo() {
   return geo;
 }
 
-function buildLeafGeo() {
+function buildLeafGeo(lite: boolean) {
   const s = new THREE.Shape();
   s.moveTo(0, 0);
   s.bezierCurveTo(0.2, 0.08, 0.27, 0.34, 0.02, 0.62);
   s.lineTo(0, 0.64);
   s.lineTo(-0.02, 0.62);
   s.bezierCurveTo(-0.27, 0.34, -0.2, 0.08, 0, 0);
-  const geo = new THREE.ShapeGeometry(s, 18);
+  const geo = new THREE.ShapeGeometry(s, lite ? 8 : 18);
   const pos = geo.attributes.position as THREE.BufferAttribute;
   const uv = new Float32Array(pos.count * 2);
   for (let i = 0; i < pos.count; i++) {
@@ -228,13 +229,20 @@ interface Drop {
 }
 
 export function createPizzaScene(container: HTMLElement): PizzaScene {
-  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // telefono / dispositivo debole: niente antialias nativo, niente ombre, pixel ratio basso, geometrie e texture ridotte
+  const coarse = window.matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 700;
+  const lowCpu = (navigator.hardwareConcurrency || 8) <= 4;
+  const lite = coarse || lowCpu;
+  setTexScale(lite ? 0.5 : 1);
+  const renderer = new THREE.WebGLRenderer({ antialias: !lite, powerPreference: lite ? "default" : "high-performance" });
+  const maxDpr = lite ? 1.25 : 2;
+  let dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+  renderer.setPixelRatio(dpr);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.12;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = !lite;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.domElement.style.cssText = "width:100%;height:100%;display:block";
   container.appendChild(renderer.domElement);
   const aniso = renderer.capabilities.getMaxAnisotropy();
@@ -242,18 +250,20 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0f0b09);
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.32;
+  if (!lite) {
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 0.32;
+  }
   pmrem.dispose();
 
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 80);
 
   /* luci */
-  scene.add(new THREE.HemisphereLight(0xffe9d0, 0x2a140a, 0.55));
+  scene.add(new THREE.HemisphereLight(0xffe9d0, 0x2a140a, lite ? 0.95 : 0.55));
   const key = new THREE.DirectionalLight(0xfff0dc, 2.4);
   key.position.set(3.6, 7.5, 4.2);
-  key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.castShadow = !lite;
+  key.shadow.mapSize.set(1536, 1536);
   Object.assign(key.shadow.camera, { left: -3.6, right: 3.6, top: 3.6, bottom: -3.6, near: 1, far: 20 });
   key.shadow.bias = -0.0004;
   key.shadow.normalBias = 0.025;
@@ -275,7 +285,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   glow.position.set(0, 1.2, -7);
   scene.add(glow);
 
-  const EMBERS = 140;
+  const EMBERS = lite ? 40 : 140;
   const emberPos = new Float32Array(EMBERS * 3);
   const emberSpeed = new Float32Array(EMBERS);
   const er = rng(5);
@@ -298,7 +308,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
 
   const woodTex = woodTexture(aniso);
   const woodMat = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.82, metalness: 0, transparent: true });
-  const boardGeo = new THREE.CylinderGeometry(2.62, 2.62, 0.09, 96);
+  const boardGeo = new THREE.CylinderGeometry(2.62, 2.62, 0.09, lite ? 48 : 96);
   const board = new THREE.Mesh(boardGeo, woodMat);
   board.position.y = -0.05;
   board.receiveShadow = true;
@@ -319,7 +329,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
 
   const doughTex = doughTexture(aniso);
   const bumpTex = doughBump(aniso);
-  const crustGeo = buildCrust();
+  const crustGeo = buildCrust(lite);
   const crustMat = new THREE.MeshStandardMaterial({ map: doughTex, bumpMap: bumpTex, bumpScale: 2.2, roughness: 0.82, metalness: 0, side: THREE.DoubleSide });
   patchMaterial(crustMat, "crust", { bake: { uBake: bake, raw: new THREE.Color(0.93, 0.84, 0.66) } });
   const crust = new THREE.Mesh(crustGeo, crustMat);
@@ -328,7 +338,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   pizza.add(crust);
 
   const sauceTex = sauceTexture(aniso);
-  const sauceGeo = buildDisc(1.68, 36, (x, z) => 0.158 + 0.018 * fbm(x * 3, z * 3, 3, 40));
+  const sauceGeo = buildDisc(1.68, lite ? 16 : 36, lite ? 72 : 160, (x, z) => 0.158 + 0.018 * fbm(x * 3, z * 3, 3, 40));
   const sauceMat = new THREE.MeshPhysicalMaterial({ map: sauceTex, roughness: 0.38, metalness: 0, clearcoat: 0.55, clearcoatRoughness: 0.3 });
   patchMaterial(sauceMat, "sauce", { reveal: sauceReveal });
   const sauce = new THREE.Mesh(sauceGeo, sauceMat);
@@ -336,7 +346,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   pizza.add(sauce);
 
   const cheeseTex = cheeseTexture(aniso);
-  const cheeseGeo = buildDisc(1.64, 70, (x, z) => 0.185 + 0.075 * smoothstep(0.4, 0.62, cheeseField(x, z)));
+  const cheeseGeo = buildDisc(1.64, lite ? 30 : 70, lite ? 72 : 160, (x, z) => 0.185 + 0.075 * smoothstep(0.4, 0.62, cheeseField(x, z)));
   const cheeseMat = new THREE.MeshPhysicalMaterial({
     map: cheeseTex,
     transparent: true,
@@ -364,7 +374,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   };
 
   // bocconcini di fior di latte che si sciolgono in forno
-  const mozzGeo = new THREE.SphereGeometry(0.2, 24, 16);
+  const mozzGeo = new THREE.SphereGeometry(0.2, lite ? 14 : 24, lite ? 10 : 16);
   const mozzMat = new THREE.MeshPhysicalMaterial({ color: 0xfffaf0, roughness: 0.34, clearcoat: 0.6, clearcoatRoughness: 0.25 });
   const mozzBase: THREE.Mesh[] = [];
   for (let i = 0; i < 8; i++) {
@@ -381,7 +391,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   }
 
   // salame piccante
-  const salameGeo = buildSalameGeo();
+  const salameGeo = buildSalameGeo(lite);
   const salameTexMap = salameTexture(aniso);
   const salameMat = new THREE.MeshStandardMaterial({ map: salameTexMap, roughness: 0.5, metalness: 0.02 });
   for (let i = 0; i < 13; i++) {
@@ -395,7 +405,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   }
 
   // granella di pistacchio (istanziata)
-  const PIST = 90;
+  const PIST = lite ? 40 : 90;
   const pistGeo = new THREE.DodecahedronGeometry(0.034, 0);
   const pistMat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.02 });
   const pist = new THREE.InstancedMesh(pistGeo, pistMat, PIST);
@@ -411,7 +421,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   pizza.add(pist);
 
   // basilico fresco: aggiunto a fine cottura
-  const leafGeo = buildLeafGeo();
+  const leafGeo = buildLeafGeo(lite);
   const basilTex = basilTexture(aniso);
   const leafMat = new THREE.MeshStandardMaterial({ map: basilTex, roughness: 0.5, side: THREE.DoubleSide });
   for (let i = 0; i < 8; i++) {
@@ -435,7 +445,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
     const z = Math.sin(a) * rr;
     oilPts.push(new THREE.Vector3(x, cheeseTop(x, z) + 0.05, z));
   }
-  const oilGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(oilPts), 520, 0.0125, 7, false);
+  const oilGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(oilPts), lite ? 200 : 520, 0.0125, lite ? 5 : 7, false);
   const oilMat = new THREE.MeshPhysicalMaterial({ color: 0xe6b422, roughness: 0.06, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.03, transparent: true, opacity: 0.82, ior: 1.47 });
   const oil = new THREE.Mesh(oilGeo, oilMat);
   oil.castShadow = false;
@@ -459,7 +469,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   const steamTex = softSprite("rgba(255,255,255,0.9)", "rgba(255,255,255,0)");
   const steam: { s: THREE.Sprite; phase: number; x: number; z: number; mat: THREE.SpriteMaterial }[] = [];
   const sr = rng(808);
-  for (let i = 0; i < 34; i++) {
+  for (let i = 0; i < (lite ? 12 : 34); i++) {
     const mat = new THREE.SpriteMaterial({ map: steamTex, transparent: true, opacity: 0, depthWrite: false, color: 0xffffff });
     const s = new THREE.Sprite(mat);
     scene.add(s);
@@ -483,7 +493,7 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
     mouse.tx = ((e.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2;
     mouse.ty = ((e.clientY - rect.top) / Math.max(rect.height, 1) - 0.5) * 2;
   };
-  window.addEventListener("pointermove", onPointer, { passive: true });
+  if (!lite) window.addEventListener("pointermove", onPointer, { passive: true });
 
   function apply(p: number, dt: number) {
     // 1) impasto lanciato e steso
@@ -575,14 +585,14 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
 
     // 6) servita: vapore e tagli
     const steamAmt = ease(seg(p, 0.8, 0.9));
-    steam.forEach((st, i) => {
+    steam.forEach((st) => {
       const k = (time * 0.18 + st.phase) % 1;
       const wob = Math.sin(time * 1.1 + st.phase * 9) * 0.22 * k;
       st.s.position.set(st.x * 0.6 + wob, 0.55 + k * 2.6, st.z * 0.6 + rig.position.z);
       const sz = 0.7 + k * 1.9;
       st.s.scale.set(sz, sz, 1);
       st.mat.opacity = steamAmt * Math.sin(Math.PI * k) * 0.2;
-      st.s.visible = steamAmt > 0.01 && i < 34;
+      st.s.visible = steamAmt > 0.01;
     });
     const cutAmt = ease(seg(p, 0.9, 0.96));
     cuts.forEach((c) => {
@@ -614,6 +624,8 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
   let last = performance.now();
   let disposed = false;
   let forceRender = true;
+  let slowAcc = 0.016;
+  let idleTick = 0;
 
   function frame(now: number) {
     if (disposed) return;
@@ -621,6 +633,21 @@ export function createPizzaScene(container: HTMLElement): PizzaScene {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     if (!active && !forceRender) return;
+    // dispositivo lento: se i frame durano troppo scala la risoluzione, se vanno bene la rialza
+    slowAcc = slowAcc * 0.92 + Math.min(dt, 0.1) * 0.08;
+    if (slowAcc > 0.034 && dpr > 0.75) {
+      dpr = Math.max(0.75, dpr - 0.25);
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(Math.max(container.clientWidth, 1), Math.max(container.clientHeight, 1), false);
+      slowAcc = 0.02;
+    }
+    // su telefono ridisegna solo quando lo scroll muove l'animazione (o ogni tanto per il bagliore del forno)
+    const moving = Math.abs(target - progress) > 0.00005;
+    if (lite && !moving && !forceRender) {
+      idleTick += dt;
+      if (idleTick < 0.12) return;
+    }
+    idleTick = 0;
     time += dt;
     progress += (target - progress) * (1 - Math.exp(-dt * 7));
     if (Math.abs(target - progress) < 0.00005) progress = target;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Phone, Mail } from "lucide-react";
+import { MapPin, Phone, Mail, Lock } from "lucide-react";
 import { SITE, fullAddress, telHref, whatsappHref } from "@/lib/site";
 import type { OpeningHour, Settings } from "@/lib/types";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "./BrandIcons";
@@ -72,8 +72,16 @@ export function Footer({ settings, hours }: { settings: Settings; hours: Opening
         </div>
       </div>
 
-      <div className="mx-auto mt-12 max-w-7xl border-t border-white/10 px-4 pt-6 text-xs text-crema/60 sm:px-6">
-        © {new Date().getFullYear()} {SITE.name} · {fullAddress}
+      <div className="mx-auto mt-12 flex max-w-7xl flex-col items-start gap-4 border-t border-white/10 px-4 pt-6 text-xs text-crema/60 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <span>© {new Date().getFullYear()} {SITE.name} · {fullAddress}</span>
+        <Link
+          href="/admin"
+          rel="nofollow"
+          className="inline-flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 font-medium text-crema/70 transition hover:border-oro hover:text-oro"
+        >
+          <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+          Area riservata
+        </Link>
       </div>
     </footer>
   );

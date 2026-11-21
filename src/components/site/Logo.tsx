@@ -8,7 +8,7 @@ export function EpicLogo({ className = "h-14 w-14", priority = false }: { classN
       alt="Epic Pizza"
       width={1000}
       height={1004}
-      sizes="(max-width: 640px) 64px, 224px"
+      sizes="(max-width: 640px) 192px, (max-width: 1024px) 256px, 416px"
       priority={priority}
       className={`${className} shrink-0 object-contain`}
     />

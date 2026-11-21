@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, Phone, ShoppingBag, X } from "lucide-react";
+import { Phone, ShoppingBag } from "lucide-react";
 import { useCart } from "@/components/cart/CartProvider";
 import { telHref } from "@/lib/site";
 import { formatEuro } from "@/lib/pricing";
@@ -21,9 +21,8 @@ export function Header() {
   const pathname = usePathname();
   const { count, subtotal, bump, setDrawerOpen, hydrated } = useCart();
   const { settings } = useSiteInfo();
-  const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const transparent = pathname === "/" && !scrolled && !open;
+  const transparent = pathname === "/" && !scrolled;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -32,16 +31,11 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    // chiude il menu mobile a ogni cambio pagina
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpen(false);
-  }, [pathname]);
 
   return (
     <header
       className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${
-        transparent ? "bg-transparent" : "bg-lava/95 shadow-lg shadow-black/10 backdrop-blur"
+        transparent ? "bg-black/40" : "border-b border-brace/40 bg-black/95 shadow-lg shadow-black/30 backdrop-blur"
       }`}
     >
       {settings.announcement && (
@@ -72,10 +66,10 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <a
             href={telHref(settings.phone)}
-            className="hidden h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-crema/90 hover:text-crema md:inline-flex"
+            className="inline-flex h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-crema/90 hover:text-crema"
           >
             <Phone className="h-4 w-4" aria-hidden="true" />
-            {settings.phone}
+            <span className="hidden md:inline">{settings.phone}</span>
           </a>
           <button
             type="button"
@@ -91,48 +85,9 @@ export function Header() {
               </span>
             )}
           </button>
-          <button
-            type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-crema hover:bg-white/10 lg:hidden"
-            onClick={() => setOpen((o) => !o)}
-            aria-expanded={open}
-            aria-controls="mobile-nav"
-            aria-label={open ? "Chiudi menu" : "Apri menu"}
-          >
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
         </div>
       </div>
 
-      {open && (
-        <nav id="mobile-nav" className="animate-fade-in border-t border-white/10 bg-lava px-4 pb-6 pt-2 lg:hidden" aria-label="Menu mobile">
-          <ul className="space-y-1">
-            {NAV.map((n) => (
-              <li key={n.href}>
-                <Link
-                  href={n.href}
-                  className={`flex h-12 items-center rounded-xl px-4 text-base font-medium ${
-                    pathname.startsWith(n.href) ? "bg-white/10 text-oro" : "text-crema"
-                  }`}
-                >
-                  {n.label}
-                </Link>
-              </li>
-            ))}
-            <li>
-              <Link href="/area-cliente" className="flex h-12 items-center rounded-xl px-4 text-base font-medium text-crema/80">
-                I miei ordini
-              </Link>
-            </li>
-          </ul>
-          <a
-            href={telHref(settings.phone)}
-            className="mt-4 flex h-12 items-center justify-center gap-2 rounded-full border border-oro/50 text-base font-semibold text-oro"
-          >
-            <Phone className="h-5 w-5" aria-hidden="true" /> Chiama {settings.phone}
-          </a>
-        </nav>
-      )}
     </header>
   );
 }

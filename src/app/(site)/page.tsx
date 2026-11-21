@@ -24,31 +24,31 @@ export default async function HomePage() {
   return (
     <>
       {/* HERO */}
-      <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden text-crema sm:items-center">
-        <div className="bg-epic-texture absolute inset-0" aria-hidden="true" />
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-8 px-4 pb-28 pt-32 sm:px-6 sm:pb-16 lg:grid-cols-[1fr_auto]">
-          <div className="max-w-2xl">
+      <section className="relative isolate flex min-h-[100svh] items-center overflow-hidden text-crema">
+        <div className="bg-epic-hero absolute inset-0" aria-hidden="true" />
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-6 px-5 pb-28 pt-28 sm:px-6 lg:grid-cols-[1fr_auto] lg:gap-10 lg:pb-16 lg:pt-32">
+          <div className="order-last max-w-2xl text-center lg:order-first lg:text-left">
             <OpenBadge />
-            <p className="mt-6 text-sm font-semibold uppercase tracking-[0.25em] text-oro">Pizzeria · Hamburgheria · Catania</p>
-            <h1 className="mt-3 font-serif text-5xl font-bold leading-[1.05] sm:text-7xl">
-              Impasto leggero, <span className="block italic text-oro-light">anima catanese.</span>
+            <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.28em] text-brace sm:text-sm">Pizzeria · Hamburgheria · Catania</p>
+            <h1 className="mt-3 font-serif text-[2.6rem] font-bold leading-[1.05] sm:text-6xl lg:text-7xl">
+              Impasto leggero, <span className="block italic text-brace">anima catanese.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-crema/85">
+            <p className="mx-auto mt-4 max-w-xl text-base text-crema/85 sm:text-lg lg:mx-0">
               Pizze normali e maxi, pizzoli, pinse, calzoni e smash burger. Ordina online per asporto o consegna a domicilio, dal cuore di Cibali.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/ordina" className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-8 text-lg font-semibold text-brace-dark shadow-xl shadow-black/30 transition hover:bg-crema">
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <Link href="/ordina" className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-brace bg-brace px-8 text-lg font-semibold text-white shadow-[0_0_28px_rgb(237_28_36/0.55)] transition active:scale-[0.98] hover:bg-brace-dark">
                 Ordina ora <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Link>
-              <Link href="/menu" className="inline-flex h-14 items-center justify-center rounded-full border border-crema/40 px-8 text-lg font-semibold text-crema backdrop-blur transition hover:bg-white/10">
+              <Link href="/menu" className="inline-flex h-14 items-center justify-center rounded-full border border-brace/80 bg-black px-8 text-lg font-semibold text-crema transition active:scale-[0.98] hover:bg-brace/10">
                 Sfoglia il menù
               </Link>
             </div>
-            <p className="mt-8 text-sm uppercase tracking-[0.3em] text-crema/70">↓ Scorri: guarda nascere la tua pizza</p>
+            <p className="mt-7 hidden text-xs uppercase tracking-[0.3em] text-brace sm:block">↓ <span className="ml-2 text-crema/70">Scorri: guarda nascere la tua pizza</span></p>
           </div>
-          <div className="order-first mx-auto lg:order-none">
-            <div className="rounded-full bg-crema p-3 shadow-2xl shadow-black/40 ring-4 ring-white/20 sm:p-4">
-              <EpicLogo priority className="h-40 w-40 sm:h-64 sm:w-64 lg:h-96 lg:w-96" />
+          <div className="mx-auto">
+            <div className="rounded-full shadow-[0_0_70px_rgb(237_28_36/0.55)] ring-2 ring-brace/60">
+              <EpicLogo priority className="h-48 w-48 rounded-full sm:h-64 sm:w-64 lg:h-[26rem] lg:w-[26rem]" />
             </div>
           </div>
         </div>

@@ -55,7 +55,8 @@ export function PizzaStory() {
       const update = () => {
         const p = fixed !== null ? Math.min(1, Math.max(0, Number(fixed) || 0)) : readProgress();
         scene.setProgress(p, fixed !== null);
-        setProgress(p);
+        // evita un re-render React a ogni pixel di scroll: aggiorna solo a scatti dell'1%
+        setProgress((prev) => (Math.abs(prev - p) >= 0.01 || p === 0 || p === 1 ? p : prev));
       };
       onScroll = update;
       update();
@@ -87,7 +88,7 @@ export function PizzaStory() {
   const last = idx === CHAPTERS.length - 1;
 
   return (
-    <section ref={wrapRef} className="relative bg-lava" style={{ height: "650svh" }} aria-label="Come nasce la nostra pizza">
+    <section ref={wrapRef} className="relative h-[430svh] bg-lava md:h-[650svh]" aria-label="Come nasce la nostra pizza">
       <div className="sticky top-0 h-svh w-full overflow-hidden">
         <div ref={mountRef} className="absolute inset-0" aria-hidden="true" />
         {(failed || !ready) && (
@@ -100,14 +101,14 @@ export function PizzaStory() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(10,6,4,0.62)_100%)]" aria-hidden="true" />
 
         {/* testo del capitolo */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-8 sm:px-6 lg:inset-y-0 lg:flex lg:items-center lg:pb-0">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 px-4 pb-24 sm:px-6 sm:pb-8 lg:inset-y-0 lg:flex lg:items-center lg:pb-0">
           <div className="mx-auto w-full max-w-7xl">
-            <div key={chapter.tag} className="animate-slide-up pointer-events-auto max-w-md rounded-3xl bg-lava/70 p-6 text-crema shadow-2xl ring-1 ring-white/10 backdrop-blur-md sm:p-8">
+            <div key={chapter.tag} className="animate-slide-up pointer-events-auto max-w-md rounded-3xl bg-lava/85 p-5 text-crema shadow-2xl ring-1 ring-white/10 sm:bg-lava/70 sm:p-8 sm:backdrop-blur-md">
               <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.25em] text-oro">
                 <Flame className="h-4 w-4" aria-hidden="true" /> Passo {chapter.tag} / 06
               </p>
-              <h2 className="mt-2 font-serif text-4xl font-bold sm:text-5xl">{chapter.title}</h2>
-              <p className="mt-3 text-lg leading-relaxed text-crema/85">{chapter.text}</p>
+              <h2 className="mt-2 font-serif text-3xl font-bold sm:text-5xl">{chapter.title}</h2>
+              <p className="mt-2 text-base leading-relaxed text-crema/85 sm:mt-3 sm:text-lg">{chapter.text}</p>
               <div className="mt-5 h-1 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
                 <div className="h-full rounded-full bg-gradient-to-r from-oro to-brace" style={{ width: `${Math.round(local * 100)}%` }} />
               </div>

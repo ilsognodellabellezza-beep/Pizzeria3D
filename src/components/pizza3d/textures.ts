@@ -76,7 +76,14 @@ function toTexture(c: HTMLCanvasElement, aniso: number, srgb = true) {
   return t;
 }
 
-function paint(size: number, fn: (x: number, z: number, set: (r: number, g: number, b: number, a?: number) => void) => void) {
+/** Fattore di risoluzione delle texture procedurali (0.5 su telefono: 4x meno pixel da calcolare) */
+let texScale = 1;
+export function setTexScale(s: number) {
+  texScale = s;
+}
+
+function paint(baseSize: number, fn: (x: number, z: number, set: (r: number, g: number, b: number, a?: number) => void) => void) {
+  const size = Math.max(64, Math.round(baseSize * texScale));
   const c = canvas(size);
   const ctx = c.getContext("2d")!;
   const img = ctx.createImageData(size, size);

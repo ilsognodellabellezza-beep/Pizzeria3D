@@ -18,6 +18,9 @@ async function run(fn: () => Promise<void>): Promise<Result> {
     return { ok: true };
   } catch (e) {
     console.error(e);
+    if (e instanceof z.ZodError) {
+      return { ok: false, error: [...new Set(e.issues.map((i) => i.message))].join(" · ") || "Dati non validi" };
+    }
     return { ok: false, error: e instanceof Error ? e.message : "Errore" };
   }
 }
@@ -422,7 +425,7 @@ export async function setDiscountVisible(code: string, visible: boolean): Promis
   });
 }
 
-const dateKey = z.string().regex(/^d{4}-d{2}-d{2}$/, "Data non valida");
+const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data non valida");
 const promotionSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().trim().min(2, "Inserisci un titolo").max(80),

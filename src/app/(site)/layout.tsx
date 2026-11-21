@@ -1,6 +1,7 @@
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { MobileCartBar } from "@/components/cart/MobileCartBar";
+import { BottomNav } from "@/components/site/BottomNav";
 import { CookieBanner } from "@/components/site/CookieBanner";
 import { Footer } from "@/components/site/Footer";
 import { Header } from "@/components/site/Header";
@@ -24,6 +25,7 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
         </main>
         <Footer settings={info.settings} hours={info.hours} />
         <MobileCartBar />
+        <BottomNav />
         <CartDrawer />
         <CookieBanner />
       </CartProvider>

@@ -135,8 +135,9 @@ export async function getZones(client?: SupabaseClient): Promise<DeliveryZone[]>
   }));
 }
 
-/** Il pagamento online è offerto solo se Stripe è configurato sul server */
-export const stripeConfigured = Boolean((process.env.STRIPE_SECRET_KEY ?? "").trim());
+/** Il pagamento online è offerto solo se Stripe è configurato sul server (chiave segreta + secret del webhook) */
+export const stripeConfigured =
+  Boolean((process.env.STRIPE_SECRET_KEY ?? "").trim()) && Boolean((process.env.STRIPE_WEBHOOK_SECRET ?? "").trim());
 
 /**
  * Promozioni in corso oggi (data di Roma): inizio e fine sono automatici.
